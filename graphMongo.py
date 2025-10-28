@@ -4,6 +4,7 @@
 import os # pulled in for environmen variables
 import time # pulled in for calc time taken
 import asyncio # pulled in to run asynchronously
+import numpy as np # num py we all fw dis
 import matplotlib.pyplot as pyplot # pulled in to plot data
 from dotenv import load_dotenv # pulled in for .env environment variables
 from pymongo import AsyncMongoClient # pulled in for mongo connection
@@ -30,30 +31,60 @@ async def main():
     gungunCount = await gunguntestCol.count_documents({}) # counts documents on gungun
     currentCount = await realCol.count_documents({}) # counts documents on "real"
 
-    # query of all objects with more than 2 periods in period array
-    # gt2perQuery = { 
-    #   {"periods": {"periods": {"$gt": 2}}}
-    # }
-    
-    # query of all objects with ssnamenr: >900 & <101731
-    ssnamenrQuery = { 
+    # query of objects with string value higher than "900"
+    query900 = {
       "$and": [
-        {"ssnamenr": {"$gt": 900}},
-        {"ssnamenr": {"$lte": 101731}}
+        {"ssnamenr": {"$gt": "900"}},
+        {"periods.numberObservations": {"$gt": 5}}
       ]
-    }
+      }
 
-    gungunObjects = gungunCount.find(ssnamenrQuery) # runs query on gungun collection
-    currentObjects = currentCount.find(ssnamenrQuery) # runs query on "real" collection
-    print("I found %d objects" %gungunObjects) # prints how many was found
-    for object in gungunObjects: # loops through all objects in what was found
-      # pyplot.plot(object.periods.periods.1.period,currentObjects)
-      print(object)
+    gungunObjects = gunguntestCol.find(query900) # runs query on gungun collection
+    currentObjects = realCol.find(query900) # runs query on "real" collection
+    print("I found %d objects in gunguntest!" % gungunCount) # prints how many was found
+    print("I found %d objects in current!" % currentCount) # prints how many was found
+    
+
+    someObject = await gungunObjects.next()
+    print(someObject["periods"]["periods"][1]["period"])
+
+    # getting data 
+    gungunObjData = [[],[]]
+    currentObjData = [[],[]]
+    async for object in gungunObjects: # loops through all objects in what was found
+      if (object["periods"] != 0):
+        per = object["periods"]["periods"][1]["period"]
+        ssnamenr = object["ssnamenr"]
+        gungunObjData[0].append(ssnamenr)
+        gungunObjData[1].append(per)
+    
+    async for object in currentObjects:
+      if (object["periods"] != 0):
+        per = object["periods"]["periods"][1]["period"]
+        currentObjData[0].append(ssnamenr)
+        currentObjData[1].append(per)
+    
+    # sort arrays (should sort both of them based on ssnamenr?)
+    gungunObjData[0], gungunObjData[1] = zip(*sorted(zip(gungunObjData[0], gungunObjData[1])))
+    currentObjData[0], currentObjData[1] = zip(*sorted(zip(currentObjData[0], currentObjData[1])))
+
+
+    # makes some stuff for plotting
+    # x1 = np.arange(0,len(gungunObjData),1)
+    # x2 = np.arange(0,len(currentObjData),1)
+    # y1 = np.array(gungunObjData)
+    # y2 = np.array(currentObjData)
+
+    # print(x1)
+
+    pyplot.plot(gungunObjData[0], gungunObjData[1])
+    pyplot.plot(currentObjData[0], currentObjData[1])
+    pyplot.show()
 
 
     print("Closing connection...") # tells us
     await client.close() # it actually closes connection to mongo (best practice)
-    print("\nDonesies! It only took %s \n" % (time.time() - start_time)) # prints how long it took
+    print("\nDonesies! It only took %ss\n" % (time.time() - start_time)) # prints how long it took
   except Exception as err: # in case error is made
     raise Exception("You done fucked up: ", err)
 
