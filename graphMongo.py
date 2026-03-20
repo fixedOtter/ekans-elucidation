@@ -2,6 +2,7 @@
 # made by gunnar 10.20.2025
 #
 import os # pulled in for environmen variables
+import csv # to read csv file
 import time # pulled in for calc time taken
 import asyncio # pulled in to run asynchronously
 import numpy as np # num py we all fw dis
@@ -25,8 +26,8 @@ async def main():
     await client.admin.command("ping") # awaits ping
     print("Connected!\n") # then we connected!
 
-    gunguntestCol = client["ztf"]["snapshot_2_derived_properties_gunguntest"] # where gungun collection is
-    realCol = client["ztf"]["snapshot_2_derived_properties"] # where "real" collection is
+    gunguntestCol = client["ztf"]["ss2_gunguntest"] # where gungun collection is
+    realCol = client["ztf"]["ss2_gunguntest_2023"] # where "real" collection is
 
     gungunCount = await gunguntestCol.count_documents({}) # counts documents on gungun
     currentCount = await realCol.count_documents({}) # counts documents on "real"
@@ -66,9 +67,9 @@ async def main():
             try:
                 # daniel has these deriven into three different periods
                 current_data_map[obj["ssnamenr"]] = [
-                    obj["periods"]["periods"][1]["period"],
-                    obj["periods"]["periods"][3]["period"],
-                    obj["periods"]["periods"][5]["period"]
+                    obj["periods"]["periods"][1]["period"]
+                    # obj["periods"]["periods"][3]["period"],
+                    # obj["periods"]["periods"][5]["period"]
                 ]
             except (IndexError, KeyError):
                 continue
@@ -77,8 +78,8 @@ async def main():
     # we'll append to these as we loop through, and verify they exist in both queries.
     plot_ssnr = []
     plot_g1, plot_c1 = [], []
-    plot_g2, plot_c2 = [], []
-    plot_g3, plot_c3 = [], []
+    # plot_g2, plot_c2 = [], []
+    # plot_g3, plot_c3 = [], []
 
     async for obj in gungun_cursor:
         ssnr = obj["ssnamenr"]
@@ -87,9 +88,9 @@ async def main():
             try:
                 # grab the periods from gungun col
                 g_periods = [
-                    obj["periods"]["periods"][1]["period"],
-                    obj["periods"]["periods"][3]["period"],
-                    obj["periods"]["periods"][5]["period"]
+                    obj["periods"]["periods"][1]["period"]
+                    # obj["periods"]["periods"][3]["period"],
+                    # obj["periods"]["periods"][5]["period"]
                 ]
                 
                 # now we append the gungundata and the current data
@@ -98,11 +99,11 @@ async def main():
                 plot_g1.append(g_periods[0])
                 plot_c1.append(current_data_map[ssnr][0])
                 
-                plot_g2.append(g_periods[1])
-                plot_c2.append(current_data_map[ssnr][1])
+                # plot_g2.append(g_periods[1])
+                # plot_c2.append(current_data_map[ssnr][1])
                 
-                plot_g3.append(g_periods[2])
-                plot_c3.append(current_data_map[ssnr][2])
+                # plot_g3.append(g_periods[2])
+                # plot_c3.append(current_data_map[ssnr][2])
             except (IndexError, KeyError):
                 continue
             
@@ -110,53 +111,57 @@ async def main():
       # first make them np arrays
     plot_g1 = np.array(plot_g1)
     plot_c1 = np.array(plot_c1)
-    plot_g2 = np.array(plot_g2)
-    plot_c2 = np.array(plot_c2)
-    plot_g3 = np.array(plot_g3)
-    plot_c3 = np.array(plot_c3)
+    # plot_g2 = np.array(plot_g2)
+    # plot_c2 = np.array(plot_c2)
+    # plot_g3 = np.array(plot_g3)
+    # plot_c3 = np.array(plot_c3)
       # then we can do the math
     accuracy1 = (plot_g1 == plot_c1).sum() / len(plot_g1)
-    accuracy2 = (plot_g2 == plot_c2).sum() / len(plot_g2)
-    accuracy3 = (plot_g3 == plot_c3).sum() / len(plot_g3)
+    # accuracy2 = (plot_g2 == plot_c2).sum() / len(plot_g2)
+    # accuracy3 = (plot_g3 == plot_c3).sum() / len(plot_g3)
       # printing overall accuracy ( kinda lame )
     print(f"how accurate .12-2hr: {accuracy1}")
-    print(f"Accuracy for period 2: {accuracy2}")
-    print(f"Accuracy for period 3: {accuracy3}")
+    # print(f"Accuracy for period 2: {accuracy2}")
+    # print(f"Accuracy for period 3: {accuracy3}")
 
       # how many are on the line tho?
     on_line1 = np.isclose(plot_g1, plot_c1, rtol=0.1).sum() / len(plot_g1)
-    on_line2 = np.isclose(plot_g2, plot_c2, rtol=0.1).sum() / len(plot_g2)
-    on_line3 = np.isclose(plot_g3, plot_c3, rtol=0.1).sum() / len(plot_g3)
+    # on_line2 = np.isclose(plot_g2, plot_c2, rtol=0.1).sum() / len(plot_g2)
+    # on_line3 = np.isclose(plot_g3, plot_c3, rtol=0.1).sum() / len(plot_g3)
       # printing how many are on the line ( more interesting )
     print(f"On line for period 1: {on_line1}")
-    print(f"On line for period 2: {on_line2}")
-    print(f"On line for period 3: {on_line3}")
+    # print(f"On line for period 2: {on_line2}")
+    # print(f"On line for period 3: {on_line3}")
 
     # plotting stuff
-    fig, axs = pyplot.subplots(4, figsize=(10, 15))
+    fig, axs = pyplot.subplots(1, figsize=(10, 15))
     fig.tight_layout(pad=5.0)
     
-    # plot 1: make sure we actually do have the correct ids
-    axs[0].scatter(plot_ssnr, plot_ssnr, alpha=0.5)
-    axs[0].set_title("ssnr check")
+    # # plot 1: make sure we actually do have the correct ids
+    # axs[0].scatter(plot_ssnr, plot_ssnr, alpha=0.5)
+    # axs[0].set_title("ssnr check")
+    # # set ticks to empty so we don't have a million of em
+    # axs[0].get_xaxis().set_ticks([])
+    # axs[0].get_yaxis().set_ticks([])
 
     # # plot 2: 
-    axs[1].scatter(plot_g1, plot_c1, color='blue', alpha=0.5)
-    axs[1].set_title(".12 - 2 hr period")
+    axs.loglog(plot_g1, plot_c1, color='blue', alpha=0.5)
+    axs.set_title(".12 - 5000 hr period")
     
     # Plot 3: Period 2 Comparison
-    axs[2].scatter(plot_g2, plot_c2, color='green', alpha=0.5)
-    axs[2].set_title("2 - 100 hr period")
+    # axs[2].scatter(plot_g2, plot_c2, color='green', alpha=0.5)
+    # axs[2].set_title("2 - 100 hr period")
 
     # Plot 4: Period 3 Comparison
     # axs[3].scatter(plot_g3, plot_c3, color='red', alpha=0.5)
     # axs[3].set_title("2.1 - 5000 hr period")
 
-    for ax in axs:
-        ax.set(xlabel='Gungun Data', ylabel='Daniel Data')
-        # Add a y=x line to see deviation
-        lims = [np.min([ax.get_xlim(), ax.get_ylim()]), np.max([ax.get_xlim(), ax.get_ylim()])]
-        ax.plot(lims, lims, 'k--', alpha=0.75, zorder=0)
+    # used to be a loop but i killed it.
+    # for ax in axs:
+    axs.set(xlabel='all time data', ylabel='2023 data')
+    # Add a y=x line to see deviation
+    lims = [np.min([axs.get_xlim(), axs.get_ylim()]), np.max([axs.get_xlim(), axs.get_ylim()])]
+    axs.plot(lims, lims, 'k--', alpha=0.75, zorder=0)
 
     pyplot.show()
     
