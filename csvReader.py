@@ -22,7 +22,8 @@ def main(filename):
   # now we need to process the data 
   rows = np.array(rows) # convert to numpy array for easier processing
   rows = rows[:, [0, 2]] # grab the ssnamenr and rotper columns
+  header = header[0], header[2] # update the header to reflect the columns we grabbed
 
-  print(header, rows)
+  # print(header, rows)
 
   return header, rows

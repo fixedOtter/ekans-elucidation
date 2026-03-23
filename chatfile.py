@@ -1,5 +1,6 @@
 #
 # made by gunnar 10.20.2025
+# refactored by gemini 03.22.2026
 #
 import os # pulled in for environmen variables
 import time # pulled in for calc time taken
@@ -16,8 +17,9 @@ load_dotenv()
 URI = os.environ["URI"] # grabs uri from .env
 MONGO_USER = os.environ["MONGO_USER"] # grabs username from .env
 MONGO_PASS = os.environ["MONGO_PASS"] # grabs password from .env
-COMPARE_COL = os.environ["COMPARE_COL"] # grabs compare collection
-CSV_FILE = os.environ["CSV_FILE"] # grabs csv file from .env
+CSV_FILE = os.environ.get("CSV_FILE", "data/SS1_rederive.csv") # grabs csv file from .env
+# Grabs our new environment variable (defaults to False if not found)
+COMPARE_TO_CSV = os.environ.get("COMPARE_TO_CSV", "False").lower() == "true" 
 
 async def main():
   try:
@@ -29,24 +31,23 @@ async def main():
     print("Connected!\n") # then we connected!
 
     gunguntestCol = client["ztf"]["ss2_gunguntest"] # where gungun collection is
-    realCol = client["ztf"][COMPARE_COL] # where "real" collection is
+    realCol = client["ztf"]["ss2_gunguntest_2023"] # where "real" collection is
     [header, rows] = csvReader.main(CSV_FILE) # reads csv file and gets header and rows
 
-    compare2CSV = False # boolean for csv or mongo data
+    compare2CSV = COMPARE_TO_CSV # boolean for csv or mongo data via .env
 
     gungunCount = await gunguntestCol.count_documents({}) # counts documents on gungun
     print("I found %d objects in gunguntest!" % gungunCount) # prints how many was found
 
-    # initialize the arrays
-    # we'll append to these as we loop through, and verify they exist in both queries.
+    # Initialize shared variables for our plots
     plot_ssnr, plot_g1, plot_c1 = [], [], []
-    current_data_map = {}
+    current_data_map = {} # Shared map to store our target baseline periods
 
     if not compare2CSV:
-      print("comparing to mongo")
+      print("Comparing against current Mongo collection!")
       currentCount = await realCol.count_documents({}) # counts documents on "real"
       print("I found %d objects in current!" % currentCount) # prints how many was found
-
+      
       # query of objects with string value higher than "900"
       query900 = {
         "$and": [
@@ -71,16 +72,14 @@ async def main():
           if "periods" in obj and isinstance(obj["periods"], dict):
               try:
                   # daniel has these deriven into three different periods, we grab 1
-                  # current_data_map[obj["ssnamenr"]] = obj["periods"]["periods"][1]["period"] # period
-                  current_data_map[obj["ssnamenr"]] = obj["phaseCurve"]["r"]["H"] # red color absolute magnitude
-
+                  current_data_map[obj["ssnamenr"]] = obj["periods"]["periods"][1]["period"]
               except (IndexError, KeyError):
                   continue
-        
-    else:
-      print("comparing to csv")
-      print("I found %d objects in csv!" % len(rows)) # prints how many was found
 
+    else:
+      print("Comparing against CSV data!")
+      print("I found %d objects in csv!" % len(rows)) # prints how many was found
+      
       # csv rows is a numpy array where index 0 is ssnamenr, index 1 is rotper
       csv_ssnrs = rows[:, 0].tolist()
       
@@ -96,82 +95,65 @@ async def main():
       queryssnr = {"ssnamenr": {"$in": csv_ssnrs}}
       gungun_cursor = gunguntestCol.find(queryssnr)
 
+    # ------------------------------------------------------------------
+    # Unified Comparison Loop
+    # ------------------------------------------------------------------
     async for obj in gungun_cursor:
         ssnr = obj["ssnamenr"]
         # only append if in both
         if ssnr in current_data_map and "periods" in obj:
             try:
                 # grab the periods from gungun col
-                # g_period = obj["periods"]["periods"][1]["period"] # period
-                g_period = obj["phaseCurve"]["r"]["H"] # red color abs mag
+                g_period = obj["periods"]["periods"][1]["period"]
                 
-                
-                # now we append the gungundata and the current data
+                # append the gungundata and the targeted baseline data
                 plot_ssnr.append(ssnr)
                 plot_g1.append(g_period)
                 plot_c1.append(current_data_map[ssnr])
             except (IndexError, KeyError):
                 continue
             
+    # "accurate" calculation
     # first make them np arrays
     plot_g1 = np.array(plot_g1)
     plot_c1 = np.array(plot_c1)
 
-    # then we can do the math
-    # accuracy = (plot_g1 == plot_c1).sum() / len(plot_g1)
-    # print(f"how accurate: %f" % accuracy)
+    if len(plot_g1) == 0:
+        print("No matching objects found to compare!")
+    else:
+        # then we can do the math
+        accuracy1 = (plot_g1 == plot_c1).sum() / len(plot_g1)
+        print(f"how accurate .12-2hr: {accuracy1}")
 
-    # how many are on the line tho?
-    on_line1 = np.isclose(plot_g1, plot_c1, rtol=0.01).sum() / len(plot_g1)
-    print(f"on line: %f" % on_line1)
+        # how many are on the line tho?
+        on_line1 = np.isclose(plot_g1, plot_c1, rtol=0.1).sum() / len(plot_g1)
+        print(f"On line for period 1: {on_line1}")
 
-    # plot things
-    ax = pyplot.gca()
-    ax.scatter(plot_g1, plot_c1, label="data points", alpha=0.1, c="red")
-    # ax.plot(plot_c1, plot_c1, color="blue", label="perfect line", alpha=0.5)
+        # plotting stuff
+        fig, axs = pyplot.subplots(1, figsize=(10, 15))
+        fig.tight_layout(pad=5.0)
+        
+        axs.loglog(plot_g1, plot_c1, color='blue', alpha=0.5)
+        axs.set_title(".12 - 5000 hr period")
+        axs.set(xlabel='gungun data', ylabel='baseline data (2023 or csv)')
 
-    # lines to show aliasing
-    # ax.axhline(y=24, color='purple', linestyle='--', alpha=0.25)
-    # ax.axhline(y=48, color='purple', linestyle='--', alpha=0.25)
-    # ax.axvline(x=12, color='green', linestyle='--', alpha=0.25)
-    # ax.axvline(x=24, color='green', linestyle='--', alpha=0.25)
-    # ax.axvline(x=48, color='green', linestyle='--', alpha=0.25)
+        # Add a y=x line to see deviation
+        lims = [np.min([axs.get_xlim(), axs.get_ylim()]), np.max([axs.get_xlim(), axs.get_ylim()])]
+        axs.plot(lims, lims, 'k--', alpha=0.75, zorder=0)
 
-    # plotting in log log
-    # ax.set_yscale("log")
-    # ax.set_xscale("log")
-
-    # custom gungun tick
-    # gungun_custom_ticks = [2, 12, 24, 48, 100, 1000, 5000]
-    # gungun_custom_labels = ['2 hr', '12 hrs', '24 hrs', '48 hrs', '100 hrs', '1k hrs', '5k hrs']
-    # ax.set_xticks(gungun_custom_ticks)
-    # ax.set_xticklabels(gungun_custom_labels)
-
-    # custom gowanlock tick
-    # gowanlock_custom_ticks = [2, 10, 24, 48, 100, 1000, 5000]
-    # gowanlock_custom_labels = ['2 hr', '10 hrs', '24 hrs', '48 hrs', '100 hrs', '1k hrs', '5k hrs']
-    # ax.set_yticks(gowanlock_custom_ticks)
-    # ax.set_yticklabels(gowanlock_custom_labels)
-
-    # details for the plot
-    ax.set_xlabel("Gunnar data")
-    ax.set_ylabel("Database data")
-    ax.set_title("Database vs Gunnar data for Red abs mag. W/ %.2f %% on line" % (on_line1*100))
-    # ax.legend()
-
-    total_time = (time.time() - start_time)
-    pyplot.show()
+        pyplot.show()
     
+    total_time = (time.time() - start_time)
 
     # TODO:
     # do a little math 
     # use array1/array2 where > spec
     # divide by whole len
 
-
     print("Closing connection...") # tells us
     await client.close() # it actually closes connection to mongo (best practice)
     print("\nDonesies! It only took %ss\n" % total_time) # prints how long it took
+
   except Exception as err: # in case error is made
     raise Exception("You done fucked up: ", err)
 
