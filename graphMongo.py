@@ -28,11 +28,11 @@ async def main():
     await client.admin.command("ping") # awaits ping
     print("Connected!\n") # then we connected!
 
-    gunguntestCol = client["ztf"]["ss2_gunguntest"] # where gungun collection is
+    gunguntestCol = client["ztf"]["ss1_gunguntest"] # where gungun collection is
     realCol = client["ztf"][COMPARE_COL] # where "real" collection is
     [header, rows] = csvReader.main(CSV_FILE) # reads csv file and gets header and rows
 
-    compare2CSV = False # boolean for csv or mongo data
+    compare2CSV = True # boolean for csv or mongo data
 
     gungunCount = await gunguntestCol.count_documents({}) # counts documents on gungun
     print("I found %d objects in gunguntest!" % gungunCount) # prints how many was found
@@ -71,8 +71,8 @@ async def main():
           if "periods" in obj and isinstance(obj["periods"], dict):
               try:
                   # daniel has these deriven into three different periods, we grab 1
-                  # current_data_map[obj["ssnamenr"]] = obj["periods"]["periods"][1]["period"] # period
-                  current_data_map[obj["ssnamenr"]] = obj["phaseCurve"]["r"]["H"] # red color absolute magnitude
+                  current_data_map[obj["ssnamenr"]] = obj["periods"]["periods"][1]["period"] # period
+                  # current_data_map[obj["ssnamenr"]] = obj["phaseCurve"]["r"]["H"] # red color absolute magnitude
 
               except (IndexError, KeyError):
                   continue
@@ -102,8 +102,8 @@ async def main():
         if ssnr in current_data_map and "periods" in obj:
             try:
                 # grab the periods from gungun col
-                # g_period = obj["periods"]["periods"][1]["period"] # period
-                g_period = obj["phaseCurve"]["r"]["H"] # red color abs mag
+                g_period = obj["periods"]["periods"][1]["period"] # period
+                # g_period = obj["phaseCurve"]["r"]["H"] # red color abs mag
                 
                 
                 # now we append the gungundata and the current data
@@ -122,41 +122,41 @@ async def main():
     # print(f"how accurate: %f" % accuracy)
 
     # how many are on the line tho?
-    on_line1 = np.isclose(plot_g1, plot_c1, rtol=0.01).sum() / len(plot_g1)
+    on_line1 = np.isclose(plot_g1, plot_c1, rtol=0.1).sum() / len(plot_g1)
     print(f"on line: %f" % on_line1)
 
     # plot things
     ax = pyplot.gca()
-    ax.scatter(plot_g1, plot_c1, label="data points", alpha=0.1, c="red")
+    ax.scatter(plot_g1, plot_c1, label="data points", alpha=0.1, c="cyan", s=5)
     # ax.plot(plot_c1, plot_c1, color="blue", label="perfect line", alpha=0.5)
 
     # lines to show aliasing
-    # ax.axhline(y=24, color='purple', linestyle='--', alpha=0.25)
-    # ax.axhline(y=48, color='purple', linestyle='--', alpha=0.25)
-    # ax.axvline(x=12, color='green', linestyle='--', alpha=0.25)
-    # ax.axvline(x=24, color='green', linestyle='--', alpha=0.25)
-    # ax.axvline(x=48, color='green', linestyle='--', alpha=0.25)
+    ax.axhline(y=24, color='purple', linestyle='--', alpha=0.25)
+    ax.axhline(y=48, color='purple', linestyle='--', alpha=0.25)
+    ax.axvline(x=12, color='green', linestyle='--', alpha=0.25)
+    ax.axvline(x=24, color='green', linestyle='--', alpha=0.25)
+    ax.axvline(x=48, color='green', linestyle='--', alpha=0.25)
 
     # plotting in log log
-    # ax.set_yscale("log")
-    # ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xscale("log")
 
     # custom gungun tick
-    # gungun_custom_ticks = [2, 12, 24, 48, 100, 1000, 5000]
-    # gungun_custom_labels = ['2 hr', '12 hrs', '24 hrs', '48 hrs', '100 hrs', '1k hrs', '5k hrs']
-    # ax.set_xticks(gungun_custom_ticks)
-    # ax.set_xticklabels(gungun_custom_labels)
+    gungun_custom_ticks = [2, 12, 24, 48, 100, 1000, 5000]
+    gungun_custom_labels = ['2 hr', '12 hrs', '24 hrs', '48 hrs', '100 hrs', '1k hrs', '5k hrs']
+    ax.set_xticks(gungun_custom_ticks)
+    ax.set_xticklabels(gungun_custom_labels)
 
     # custom gowanlock tick
-    # gowanlock_custom_ticks = [2, 10, 24, 48, 100, 1000, 5000]
-    # gowanlock_custom_labels = ['2 hr', '10 hrs', '24 hrs', '48 hrs', '100 hrs', '1k hrs', '5k hrs']
-    # ax.set_yticks(gowanlock_custom_ticks)
-    # ax.set_yticklabels(gowanlock_custom_labels)
+    gowanlock_custom_ticks = [2, 10, 24, 48, 100, 1000, 5000]
+    gowanlock_custom_labels = ['2 hr', '10 hrs', '24 hrs', '48 hrs', '100 hrs', '1k hrs', '5k hrs']
+    ax.set_yticks(gowanlock_custom_ticks)
+    ax.set_yticklabels(gowanlock_custom_labels)
 
     # details for the plot
     ax.set_xlabel("Gunnar data")
-    ax.set_ylabel("Database data")
-    ax.set_title("Database vs Gunnar data for Red abs mag. W/ %.2f %% on line" % (on_line1*100))
+    ax.set_ylabel("Dr Gowanlock data")
+    ax.set_title("Dr Gowanlock vs Gunnar data for Period W/ %.2f %% on line within 10%%" % (on_line1*100))
     # ax.legend()
 
     total_time = (time.time() - start_time)
