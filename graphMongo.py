@@ -122,20 +122,21 @@ async def main():
     # print(f"how accurate: %f" % accuracy)
 
     # how many are on the line tho?
-    on_line1 = np.isclose(plot_g1, plot_c1, rtol=0.1).sum() / len(plot_g1)
-    print(f"on line: %f" % on_line1)
+    on_line_quant = np.isclose(plot_g1, plot_c1, rtol=0.1).sum()
+    on_line_perc = on_line_quant / len(plot_g1)
+    print(f"on line: %f" % on_line_perc)
 
     # plot things
     ax = pyplot.gca()
-    ax.scatter(plot_g1, plot_c1, label="data points", alpha=0.1, c="cyan", s=5)
-    # ax.plot(plot_c1, plot_c1, color="blue", label="perfect line", alpha=0.5)
+    ax.scatter(plot_g1, plot_c1, alpha=0.1, c="darkblue", s=20)
+    # ax.plot(plot_c1, plot_c1, c="pink", label="perfect line", alpha=0.8, linestyle=":", linewidth=2)
 
     # lines to show aliasing
-    ax.axhline(y=24, color='purple', linestyle='--', alpha=0.25)
-    ax.axhline(y=48, color='purple', linestyle='--', alpha=0.25)
-    ax.axvline(x=12, color='green', linestyle='--', alpha=0.25)
-    ax.axvline(x=24, color='green', linestyle='--', alpha=0.25)
-    ax.axvline(x=48, color='green', linestyle='--', alpha=0.25)
+    # ax.axhline(y=24, color='purple', linestyle='--', alpha=0.25)
+    # ax.axhline(y=48, color='purple', linestyle='--', alpha=0.25)
+    # ax.axvline(x=12, color='green', linestyle='--', alpha=0.25)
+    # ax.axvline(x=24, color='green', linestyle='--', alpha=0.25)
+    # ax.axvline(x=48, color='green', linestyle='--', alpha=0.25)
 
     # plotting in log log
     ax.set_yscale("log")
@@ -154,9 +155,9 @@ async def main():
     ax.set_yticklabels(gowanlock_custom_labels)
 
     # details for the plot
-    ax.set_xlabel("Gunnar data")
-    ax.set_ylabel("Dr Gowanlock data")
-    ax.set_title("Dr Gowanlock vs Gunnar data for Period W/ %.2f %% on line within 10%%" % (on_line1*100))
+    ax.set_xlabel("Gunnar data", fontsize=12)
+    ax.set_ylabel("Dr Gowanlock data", fontsize=12)
+    ax.set_title("Dr Gowanlock vs Gunnar data for Period\n W/ %d objects (%.2f%%) on 1:1 within 10%%" % (on_line_quant, on_line_perc*100), fontsize=16, fontweight="bold")
     # ax.legend()
 
     total_time = (time.time() - start_time)
