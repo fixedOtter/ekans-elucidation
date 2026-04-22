@@ -72,7 +72,7 @@ async def main():
               try:
                   # daniel has these deriven into three different periods, we grab 1
                   current_data_map[obj["ssnamenr"]] = obj["periods"]["periods"][1]["period"] # period
-                  # current_data_map[obj["ssnamenr"]] = obj["phaseCurve"]["r"]["H"] # red color absolute magnitude
+                  # current_data_map[obj["ssnamenr"]] = obj["phaseCurve"]["g"]["H"] - obj["phaseCurve"]["r"]["H"] # color absolute magnitude
 
               except (IndexError, KeyError):
                   continue
@@ -103,7 +103,7 @@ async def main():
             try:
                 # grab the periods from gungun col
                 g_period = obj["periods"]["periods"][1]["period"] # period
-                # g_period = obj["phaseCurve"]["r"]["H"] # red color abs mag
+                # g_period = obj["phaseCurve"]["g"]["H"] - obj["phaseCurve"]["r"]["H"] # color abs mag
                 
                 
                 # now we append the gungundata and the current data
@@ -128,7 +128,13 @@ async def main():
 
     # plot things
     ax = pyplot.gca()
+    # dark blue ss1 vs ss1
     ax.scatter(plot_g1, plot_c1, alpha=0.1, c="darkblue", s=20)
+
+    # color to period
+    # ax.scatter(plot_g1, plot_c1, alpha=0.1, c="purple", s=20)
+
+    # 1:1 line
     # ax.plot(plot_c1, plot_c1, c="pink", label="perfect line", alpha=0.8, linestyle=":", linewidth=2)
 
     # lines to show aliasing
@@ -141,6 +147,9 @@ async def main():
     # plotting in log log
     ax.set_yscale("log")
     ax.set_xscale("log")
+
+    # tick text size
+    ax.tick_params(labelsize=12)
 
     # custom gungun tick
     gungun_custom_ticks = [2, 12, 24, 48, 100, 1000, 5000]
@@ -155,9 +164,12 @@ async def main():
     ax.set_yticklabels(gowanlock_custom_labels)
 
     # details for the plot
-    ax.set_xlabel("Gunnar data", fontsize=12)
-    ax.set_ylabel("Dr Gowanlock data", fontsize=12)
-    ax.set_title("Dr Gowanlock vs Gunnar data for Period\n W/ %d objects (%.2f%%) on 1:1 within 10%%" % (on_line_quant, on_line_perc*100), fontsize=16, fontweight="bold")
+    ax.set_xlabel("Gunnar data", fontsize=16)
+    ax.set_ylabel("Current data", fontsize=16)
+    # title for csv vs mongo
+    ax.set_title("Current data vs Gunnar data for Period\n W/ %d objects (%.2f%%) on 1:1 within 10%%" % (on_line_quant, on_line_perc*100), fontsize=16, fontweight="bold")
+    # title for color vs color
+    # ax.set_title("Current SS2 vs Gunnar SS2 data for Color Abs Mag\n W/ %d objects (%.2f%%) on 1:1 within 10%%" % (on_line_quant, on_line_perc*100), fontsize=16, fontweight="bold")
     # ax.legend()
 
     total_time = (time.time() - start_time)
