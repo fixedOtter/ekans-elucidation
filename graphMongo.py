@@ -128,6 +128,7 @@ async def main():
 
     # plot things
     ax = pyplot.gca()
+    pyplot.figure(layout='constrained')
     # dark blue ss1 vs ss1
     ax.scatter(plot_g1, plot_c1, alpha=0.1, c="darkblue", s=20)
 
