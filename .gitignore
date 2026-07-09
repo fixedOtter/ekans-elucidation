@@ -210,3 +210,5 @@ __marimo__/
 data/
 # debug file
 debug.py
+# temporary files
+tmp/

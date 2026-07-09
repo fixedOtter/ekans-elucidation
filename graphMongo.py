@@ -1,5 +1,5 @@
 #
-# made by gunnar 10.20.2025
+# made by fixedotter 10.20.2025
 #
 import os # pulled in for environmen variables
 import time # pulled in for calc time taken

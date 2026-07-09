@@ -1,4 +1,6 @@
-# created by gunnar march 19 2026
+#
+# created by fixedotter march 19 2026
+#
 
 import csv # to read csv file
 import numpy as np # to convert to numpy array
