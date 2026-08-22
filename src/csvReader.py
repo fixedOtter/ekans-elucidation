@@ -5,7 +5,7 @@
 import csv # to read csv file
 import numpy as np # to convert to numpy array
 
-def main(filename):
+def readCSV(filename):
   header = []
   rows = []
 

@@ -25,7 +25,7 @@ async def main():
     connectionString = "mongodb://%s:%s@%s/" % ( MONGO_USER, MONGO_PASS, URI ) # defines string to connect
     client = AsyncMongoClient(connectionString) # actually connects
 
-    await client.admin.command("ping") # awaits ping
+    await client.admin.command("ping") # awaits ping 
     print("Connected!\n") # then we connected!
 
     gunguntestCol = client["ztf"]["ss1_gunguntest"] # where gungun collection is

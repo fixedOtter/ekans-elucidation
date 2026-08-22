@@ -48,13 +48,14 @@ if __name__ == "__main__":
           except Exception as e:
             logging.error(f"Error processing asteroid at index {index} in file {filename}: {e}")
             ssnamenr, period, color = None, None, None
-            
-          # FIX 2: Append a dictionary mapping headers to values for this specific row
-          file_rows.append({
-            'ssnamenr': ssnamenr,
-            'period': period,
-            'color': color
-          })
+
+          # there should be enough that i can just ignore where there isn't data in one of the fields
+          if ssnamenr is not None and period is not None and color is not None:
+            file_rows.append({
+              'ssnamenr': ssnamenr,
+              'period': period,
+              'color': color
+            })
 
         # FIX 3: Feed the list of dictionaries straight to the DataFrame constructor
         df = pd.DataFrame(file_rows)
