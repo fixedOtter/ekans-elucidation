@@ -75,11 +75,9 @@ def getTimeRange(year):
 
 # create a function that takes a list of files and processes them
 
-
-
 if __name__ == "__main__":
   # logging setup
-  logging.basicConfig(filename='./tmp/ampCompiler.log', level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+  logging.basicConfig(filename='./tmp/ampCompiler_TEST.log', level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
   logging.info("Starting Amplitude Calculation.")
 
   # how long does this take
@@ -114,8 +112,11 @@ if __name__ == "__main__":
       logging.info(f"Read {len(rows)} rows from {filename}.")
 
       rows = np.array(rows)  # convert to numpy array for easier processing
-      # ssnamenr_set.update(rows[:, 0])  # grab the ssnamenr values and add them to the set
-      rows = rows[:, [0, 1]]  # grab the ssnamenr and rotper columns  
+
+      # grabbing the individual columns, so it's easier to concat with np
+      ssnamenr_list = rows[:, 0]  # convert ssnamenr column
+      period_list = rows[:, 1]  # convert rotper column
+      color_list = rows[:, 2]  # convert color column
 
       # here is where i should be doing this with the ssnamenrs
       # at this point, i have a list of ssnamenr's and the filenames
@@ -131,7 +132,7 @@ if __name__ == "__main__":
 
       amplitude_list = []  # to hold amplitudes for each ssnamenr
 
-      for row_id,ssnamenr in enumerate(rows[:, 0],1):  # loop through each ssnamenr
+      for row_id,ssnamenr in enumerate(ssnamenr_list,1):  # loop through each ssnamenr
         ssnamenr = int(ssnamenr)  # convert ssnamenr to int
         logging.info(f"[{row_id}/{len(rows)}] Processing SSNAMENR: {ssnamenr}")
 
@@ -164,14 +165,23 @@ if __name__ == "__main__":
           logging.info(f"Using period {period} for SSNAMENR {ssnamenr}.")
 
           t_fit, y_fit, amplitude = fit_sine(time_arr, mag, error, period)
+          amplitude = str(amplitude)  # convert
           amplitude_list.append(amplitude)
         else:
           logging.warning(f"No measurements found for SSNAMENR {ssnamenr} in year {year}. Appending amplitude as 0.")
           # amplitude_list.append(0)  # append 0 if no measurements found
 
+      # testing to see if the amplitude_list is the same length as the rows
+      if len(amplitude_list) != len(rows):
+        logging.error(f"Length mismatch: amplitude_list has {len(amplitude_list)} elements, but rows has {len(rows)} elements.")
+        raise ValueError("Length of amplitude_list does not match number of rows.")
+
+      # print the first 5 amplitudes for debugging
+      logging.info(f"First 5 amplitudes: {amplitude_list[:5]}")
+
       # write amplitude back to csv file
       header.append('amplitude')
-      rows = np.column_stack((rows, amplitude_list))  # add amplitude to rows
+      rows = np.column_stack((ssnamenr_list, period_list, color_list, amplitude_list))  # add amplitude to rows
 
       # save header and rows to an updated CSV file
       updated_filename = os.path.join('./data', f'updated_{filename}')
@@ -184,3 +194,8 @@ if __name__ == "__main__":
     except Exception as e:
       logging.error(f"Error processing file {filename}: {e}")
       continue
+
+  # logging the time it took
+  end_time = time.time()
+  elapsed_time = end_time - start_time
+  logging.info(f"Finished processing {filename} in {elapsed_time:.2f} seconds.")
