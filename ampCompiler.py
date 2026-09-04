@@ -77,7 +77,8 @@ def getTimeRange(year):
 
 if __name__ == "__main__":
   # logging setup
-  logging.basicConfig(filename='./tmp/ampCompiler_TEST.log', level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+  logging.basicConfig(filename='./tmp/ampCompiler_TEST.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+  logging.getLogger('pymongo').setLevel(logging.WARNING)  # set pymongo logging to warning to reduce noise
   logging.info("Starting Amplitude Calculation.")
 
   # how long does this take
@@ -126,15 +127,15 @@ if __name__ == "__main__":
 
 
       year = filename.split('.')[1].split('_')[1]  # extract year from filename
-      logging.info(f"Extracted year {year} from filename {filename}.")
+      # logging.info(f"Extracted year {year} from filename {filename}.")
       time_range = getTimeRange(int(year))  # get the time range for that year
-      logging.info(f"Time range for year {year}: {time_range[0]} to {time_range[1]}.")
+      # logging.info(f"Time range for year {year}: {time_range[0]} to {time_range[1]}.")
 
       amplitude_list = []  # to hold amplitudes for each ssnamenr
 
       for row_id,ssnamenr in enumerate(ssnamenr_list,1):  # loop through each ssnamenr
         ssnamenr = int(ssnamenr)  # convert ssnamenr to int
-        logging.info(f"[{row_id}/{len(rows)}] Processing SSNAMENR: {ssnamenr}")
+        # logging.info(f"[{row_id}/{len(rows)}] Processing SSNAMENR: {ssnamenr}")
 
         query = {
           "$and": [
@@ -142,23 +143,23 @@ if __name__ == "__main__":
             {"jd": {"$gte": time_range[0], "$lte": time_range[1]}}
           ]
         }
-        logging.info(f"Querying MongoDB for SSNAMENR {ssnamenr} with time range {time_range[0]} to {time_range[1]}.")
-        logging.info(f"MongoDB Query: {query}")
+        # logging.info(f"Querying MongoDB for SSNAMENR {ssnamenr} with time range {time_range[0]} to {time_range[1]}.")
+        # logging.info(f"MongoDB Query: {query}")
 
         # get measurements from mongo
         measurements = list(client["ztf"]["ztf"].find(query)) # pymongo cursor
-        logging.info(f"Found {len(measurements)} measurements for SSNAMENR {ssnamenr} in year {year}.")
-        logging.info(f"Measurements: {measurements[:5]}")  # log first 5 measurements for brevity
+        # logging.info(f"Found {len(measurements)} measurements for SSNAMENR {ssnamenr} in year {year}.")
+        # logging.info(f"Measurements: {measurements[:5]}")  # log first 5 measurements for brevity
 
         if measurements:
           time_arr = np.array([m['jd']*24.0 for m in measurements])  # convert time to hours
-          logging.info(f"Time array: {time_arr[:5]}")  # log first 5 time values for brevity
+          # logging.info(f"Time array: {time_arr[:5]}")  # log first 5 time values for brevity
           mag = np.array([m['magpsf'] for m in measurements])
-          logging.info(f"Mag array: {mag[:5]}")  # log first 5 mag values for brevity
+          #logging.info(f"Mag array: {mag[:5]}")  # log first 5 mag values for brevity
           error = np.array([m['sigmapsf'] for m in measurements])
-          logging.info(f"Error array: {error[:5]}")  # log first 5 error values for brevity
+          # logging.info(f"Error array: {error[:5]}")  # log first 5 error values for brevity
 
-          logging.info(f"Rows look like this: {rows[:5]}")  # log first 5 rows for brevity
+          # logging.info(f"Rows look like this: {rows[:5]}")  # log first 5 rows for brevity
 
           period_val = rows[rows[:, 0] == str(ssnamenr), 1][0]  # get the period for this ssnamenr
           period = np.float64(period_val) # convert period to np.float64
@@ -177,7 +178,7 @@ if __name__ == "__main__":
         raise ValueError("Length of amplitude_list does not match number of rows.")
 
       # print the first 5 amplitudes for debugging
-      logging.info(f"First 5 amplitudes: {amplitude_list[:5]}")
+      # logging.info(f"First 5 amplitudes: {amplitude_list[:5]}")
 
       # write amplitude back to csv file
       header.append('amplitude')
