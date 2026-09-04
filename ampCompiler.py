@@ -77,7 +77,7 @@ def getTimeRange(year):
 
 if __name__ == "__main__":
   # logging setup
-  logging.basicConfig(filename='./tmp/ampCompiler_TEST.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+  logging.basicConfig(filename='./tmp/ampCompiler.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
   logging.getLogger('pymongo').setLevel(logging.WARNING)  # set pymongo logging to warning to reduce noise
   logging.info("Starting Amplitude Calculation.")
 
@@ -163,7 +163,7 @@ if __name__ == "__main__":
 
           period_val = rows[rows[:, 0] == str(ssnamenr), 1][0]  # get the period for this ssnamenr
           period = np.float64(period_val) # convert period to np.float64
-          logging.info(f"Using period {period} for SSNAMENR {ssnamenr}.")
+          # logging.info(f"Using period {period} for SSNAMENR {ssnamenr}.")
 
           t_fit, y_fit, amplitude = fit_sine(time_arr, mag, error, period)
           amplitude = str(amplitude)  # convert
