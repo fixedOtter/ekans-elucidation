@@ -182,6 +182,7 @@ if __name__ == "__main__":
 
       # write amplitude back to csv file
       header.append('amplitude')
+      header[0] = header[0].upper()  # capitalize the ssnamenr header
       rows = np.column_stack((ssnamenr_list, period_list, color_list, amplitude_list))  # add amplitude to rows
 
       # save header and rows to an updated CSV file
